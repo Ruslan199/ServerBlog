@@ -40,8 +40,13 @@ export default function MainCopmonent() {
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
 
+  function exit() {
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    navigate("/");
+  }
   function getPosts() {
-    const url = "https://localhost:5001/api/posts/getPosts";
+    const url = "https://localhost:5001/api/posts/getUserPosts";
 
     fetch(url,{
       headers: {
@@ -52,7 +57,7 @@ export default function MainCopmonent() {
       .then(response => response.json())
       .then(postsFromServer => {
         console.log(postsFromServer);
-        setPosts(postsFromServer);
+        setPosts(postsFromServer.posts);
       })
       .catch((error) => {
         console.log(error);
@@ -68,6 +73,10 @@ export default function MainCopmonent() {
           <h1>ASP.Net  Core REact</h1>
 
           <div className="mt-5">
+                <button onClick={ exit } className="btn btn-dark btn-lg w-100">Выйти</button>
+
+
+
                <button onClick={ getPosts } className="btn btn-dark btn-lg w-100">Get Posts From Server</button>
                <button onClick={() => navigate("/addPost")} className="btn btn-secondary btn-lg w-100 mt-4">Create New Post</button>
           </div>

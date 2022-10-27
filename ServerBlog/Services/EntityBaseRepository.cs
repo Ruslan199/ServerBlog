@@ -41,9 +41,9 @@ namespace ServerBlog.Services
             }
         }
 
-        public virtual Task<int> Commit()
+        public virtual async Task<int> Commit()
         {
-             return Context.SaveChangesAsync();
+             return await Context.SaveChangesAsync();
         }
         public virtual IEnumerable<T> GetAll()
         {
@@ -54,19 +54,19 @@ namespace ServerBlog.Services
         {
             return Context.Set<T>().Count();
         }
-        public virtual IEnumerable<T> AllIncluding(params Expression<Func<T, object>>[] includeProperties)
+        public async virtual Task<IEnumerable<T>> AllIncludingAsync(params Expression<Func<T, object>>[] includeProperties)
         {
             IQueryable<T> query = Context.Set<T>();
             foreach (var includeProperty in includeProperties)
             {
                 query = query.Include(includeProperty);
             }
-            return query.AsEnumerable();
+            return await query.ToListAsync();
         }
 
-        public async ValueTask<T> GetSingleAsync(Expression<Func<T, bool>> predicate)
+        public async ValueTask<T> GetAsync(Expression<Func<T, bool>> predicate)
         {
-            return Context.Set<T>().FirstOrDefault(predicate);
+            return await Context.Set<T>().FirstOrDefaultAsync(predicate);
         }
 
         public T GetSingle(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includeProperties)
