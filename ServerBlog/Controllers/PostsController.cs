@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ServerBlog.Models;
+using ServerBlog.Models.Entities;
 using ServerBlog.Models.Request;
+using ServerBlog.Models.Response;
 using ServerBlog.Services.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -16,36 +19,80 @@ namespace ServerBlog.Controllers
     [ApiController]
     public class PostsController : ControllerBase
     {
-        private readonly PostDBContext Context;
+        private readonly ILogger Logger;
         private readonly IUserRepository UserService;
+        private readonly IPostRepository PostService;
 
-        public PostsController(PostDBContext context, IUserRepository userService) 
+        public PostsController(PostDBContext context, IUserRepository userService, IPostRepository postRepository, ILogger logger) 
         {
-            Context = context;
             UserService = userService;
+            PostService = postRepository;
+            Logger = logger;
         }
 
-        // GET: api/DCandidate
-        [HttpGet("getPosts")]
+        // GET: api/posts/getUserPosts
+        [HttpGet("getUserPosts")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<Post>>> GetDCandidates()
+        public async Task<ActionResult<IEnumerable<Post>>> GetAllUserPosts()
         {
-            var userId = HttpContext.User.Identity.Name;
-            return await Context.Posts.Where(x=>x.UserId.ToString() == userId).ToListAsync();
+            try
+            {
+                var userId = HttpContext.User.Identity.Name;
+                var allUserPosts = await PostService.AllIncludingAsync(x => x.UserId.ToString() == userId);
+                return new JsonResult(new AllPostUser { Success = true, Message = "", Posts = allUserPosts });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        // GET: api/posts/getUserPosts
+        [HttpGet("getCountPosts")]
+        public ActionResult<IEnumerable<Post>> GetCountAllUserPosts()
+        {
+            try
+            {
+                var getAllUser = UserService.GetAll().ToList();
+                var allUserPosts = new List<AllPosts>();
+
+                foreach (var user in getAllUser)
+                {
+                    var countPost = PostService.GetAll().Where(x => x.UserId == user.UserId).Count();
+                    allUserPosts.Add(new AllPosts { UserName = user.Login, CountPost = countPost });
+                }
+
+                return new JsonResult(new AllPostsFromServer { AllPosts = allUserPosts });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
         }
 
         // GET: api/DCandidate/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Post>> GetDCandidate(int id)
+        public async Task<ActionResult<Post>> GetDCandidate(string id)
         {
-            var dCandidate = await Context.Posts.FindAsync(id);
-
-            if (dCandidate == null)
+            try
             {
-                return NotFound();
+                var dCandidate = await PostService.GetAsync(x => x.PostId.ToString() == id);
+
+                if (dCandidate == null)
+                {
+                    return NotFound();
+                }
+
+                return dCandidate;
             }
 
-            return dCandidate;
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
         }
 
         // PUT: api/DCandidate/5
@@ -56,11 +103,11 @@ namespace ServerBlog.Controllers
         {
             dCandidate.PostId = id;
 
-            Context.Entry(dCandidate).State = EntityState.Modified;
+            PostService.Update(dCandidate);
 
             try
             {
-                await Context.SaveChangesAsync();
+                await PostService.Commit();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,43 +129,58 @@ namespace ServerBlog.Controllers
         // more details see https://aka.ms/RazorPagesCRUD.
         [Authorize]
         [HttpPost("addPost")]
-        public async Task<ActionResult<Post>> PostDCandidate([FromBody] AddPostRequest postRequest)
+        public async Task<ActionResult<Post>> CreatePost([FromBody] AddPostRequest postRequest)
         {
-            Post post = new Post()
+            try
             {
-                PostId = new Guid(),
-                Title = postRequest.Title,
-                Content = postRequest.Content,
-                CreatedOn = DateTime.Now,
-                UserId = UserService.GetSingle(x=>x.UserId.ToString() == postRequest.UserId).UserId
-            };
+                Post post = new Post()
+                {
+                    PostId = new Guid(),
+                    Title = postRequest.Title,
+                    Content = postRequest.Content,
+                    CreatedOn = DateTime.Now,
+                    UserId = UserService.GetSingle(x => x.UserId.ToString() == postRequest.UserId).UserId
+                };
 
+                PostService.Add(post);
+                await PostService.Commit();
 
-            Context.Posts.Add(post);
-            await Context.SaveChangesAsync();
-
-            return CreatedAtAction("GetDCandidate", new { id = post.PostId }, post);
+                return CreatedAtAction("GetDCandidate", new { id = post.PostId }, post);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
         }
 
         // DELETE: api/DCandidate/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Post>> DeleteDCandidate(Guid id)
+        public async Task<ActionResult<Post>> DeleteDCandidate(string id)
         {
-            var dCandidate = await Context.Posts.FindAsync(id);
-            if (dCandidate == null)
+            try
             {
-                return NotFound();
+                var dCandidate = await PostService.GetAsync(x => x.PostId.ToString() == id);
+                if (dCandidate == null)
+                {
+                    return NotFound();
+                }
+
+                PostService.Delete(dCandidate);
+                await PostService.Commit();
+
+                return dCandidate;
             }
-
-            Context.Posts.Remove(dCandidate);
-            await Context.SaveChangesAsync();
-
-            return dCandidate;
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
         }
 
         private bool PostExists(Guid id)
         {
-            return Context.Posts.Any(e => e.PostId == id);
+            return PostService.GetAll().Any(x =>x.PostId == id);
         }
     }
 }
