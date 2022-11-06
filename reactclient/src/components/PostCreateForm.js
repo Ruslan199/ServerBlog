@@ -1,9 +1,29 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
+export function deletePost(postId) {
+    console.log(postId);
+    const url = "https://localhost:5001/api/posts/" + postId;
+  
+    fetch(url,{
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer " + sessionStorage.getItem("token")
+      }
+    })
+      .then(response => response.json())
+      .then(postsFromServer => {
+        
+      })
+      .catch((error) => {
+      });
+  }
+
 export default function PostCreateForm(props) {
     const [formData, setFormData] = useState({});
     const navigate = useNavigate();
+
 
     const handleChange = (e) => {
         setFormData({
@@ -34,7 +54,7 @@ export default function PostCreateForm(props) {
         })
             .then(response => response.json())
             .then(responseFromServer => {
-                navigate("/getPosts")
+                navigate("/")
             })
             .catch((error) => {
                 console.log(error);
@@ -44,20 +64,20 @@ export default function PostCreateForm(props) {
 
     return (
         <form className="w-100 px-5">
-            <h1 className="mt-5">Create new post</h1>
+            <h1 className="mt-5">Создание нового поста</h1>
 
             <div className="mt-5">
-                <label className="h3 form-label">Post title</label>
+                <label className="h3 form-label">Заголовок</label>
                 <input value={formData.title} name="title" type="text" className="form-control" onChange={handleChange} />
             </div>
 
             <div className="mt-4">
-                <label className="h3 form-label">Post content</label>
+                <label className="h3 form-label">Контент</label>
                 <input value={formData.content} name="content" type="text" className="form-control" onChange={handleChange} />
             </div>
 
-            <button onClick={handleSubmit} className="btn btn-dark btn-lg w-100 mt-5">Submit</button>
-            <button onClick={() => navigate("/")} className="btn btn-secondary btn-lg w-100 mt-3">Cancel</button>
+            <button onClick={handleSubmit} className="btn btn-dark btn-lg w-100 mt-5">Создать</button>
+            <button onClick={() => navigate("/")} className="btn btn-secondary btn-lg w-100 mt-3">Отмена</button>
         </form>
     );
 }

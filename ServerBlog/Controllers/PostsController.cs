@@ -19,11 +19,11 @@ namespace ServerBlog.Controllers
     [ApiController]
     public class PostsController : ControllerBase
     {
-        private readonly ILogger Logger;
+        private readonly ILogger<PostsController> Logger;
         private readonly IUserRepository UserService;
         private readonly IPostRepository PostService;
 
-        public PostsController(PostDBContext context, IUserRepository userService, IPostRepository postRepository, ILogger logger) 
+        public PostsController(IUserRepository userService, IPostRepository postRepository, ILogger<PostsController> logger) 
         {
             UserService = userService;
             PostService = postRepository;
@@ -38,7 +38,7 @@ namespace ServerBlog.Controllers
             try
             {
                 var userId = HttpContext.User.Identity.Name;
-                var allUserPosts = await PostService.AllIncludingAsync(x => x.UserId.ToString() == userId);
+                var allUserPosts = PostService.FindBy(x=>x.UserId.ToString() == userId);
                 return new JsonResult(new AllPostUser { Success = true, Message = "", Posts = allUserPosts });
             }
             catch (Exception ex)
@@ -50,6 +50,7 @@ namespace ServerBlog.Controllers
 
         // GET: api/posts/getUserPosts
         [HttpGet("getCountPosts")]
+        [Authorize]
         public ActionResult<IEnumerable<Post>> GetCountAllUserPosts()
         {
             try
@@ -59,7 +60,7 @@ namespace ServerBlog.Controllers
 
                 foreach (var user in getAllUser)
                 {
-                    var countPost = PostService.GetAll().Where(x => x.UserId == user.UserId).Count();
+                    var countPost = PostService.FindBy(x => x.UserId == user.UserId).Count();
                     allUserPosts.Add(new AllPosts { UserName = user.Login, CountPost = countPost });
                 }
 
@@ -72,20 +73,49 @@ namespace ServerBlog.Controllers
             }
         }
 
-        // GET: api/DCandidate/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Post>> GetDCandidate(string id)
+        [HttpGet("getAllPosts")]
+        [Authorize]
+        public ActionResult<IEnumerable<Post>> GetAllPosts()
         {
             try
             {
-                var dCandidate = await PostService.GetAsync(x => x.PostId.ToString() == id);
+                var allUserPosts = PostService.GetAll().ToList();
+                var posts = new List<AllPostFromBlog>();
 
-                if (dCandidate == null)
+                foreach (var post in allUserPosts)
+                {
+                    posts.Add(new AllPostFromBlog
+                    {
+                        Author =  GetAuthor(post.UserId),
+                        Content = post.Content,
+                        Title = post.Title,
+                        CreatedOn = post.CreatedOn,
+                        PostId = post.PostId
+                    });
+                }
+                return new JsonResult(new AllPostsFromServerResponse { Success = true, Message = "", Posts = posts });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception occurred with a message: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        // GET: api/DCandidate/5
+        [HttpGet("GetPostById/{id}")]
+        public async Task<ActionResult<Post>> GetPost(string id)
+        {
+            try
+            {
+                var post = await PostService.GetAsync(x => x.PostId.ToString() == id);
+
+                if (post == null)
                 {
                     return NotFound();
                 }
 
-                return dCandidate;
+                return post;
             }
 
             catch (Exception ex)
@@ -99,11 +129,11 @@ namespace ServerBlog.Controllers
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see https://aka.ms/RazorPagesCRUD.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutDCandidate(Guid id, Post dCandidate)
+        public async Task<IActionResult> PutPost(Guid id, Post post)
         {
-            dCandidate.PostId = id;
+            post.PostId = id;
 
-            PostService.Update(dCandidate);
+            PostService.Update(post);
 
             try
             {
@@ -111,7 +141,7 @@ namespace ServerBlog.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!PostExists(dCandidate.PostId))
+                if (!PostExists(post.PostId))
                 {
                     return NotFound();
                 }
@@ -145,7 +175,7 @@ namespace ServerBlog.Controllers
                 PostService.Add(post);
                 await PostService.Commit();
 
-                return CreatedAtAction("GetDCandidate", new { id = post.PostId }, post);
+                return new JsonResult(new BaseResponse { Success = true, Message = "Успешно добавлена запись"});
             }
             catch (Exception ex)
             {
@@ -160,16 +190,16 @@ namespace ServerBlog.Controllers
         {
             try
             {
-                var dCandidate = await PostService.GetAsync(x => x.PostId.ToString() == id);
-                if (dCandidate == null)
+                var post = await PostService.GetAsync(x => x.PostId.ToString() == id);
+                if (post == null)
                 {
                     return NotFound();
                 }
 
-                PostService.Delete(dCandidate);
+                PostService.Delete(post);
                 await PostService.Commit();
 
-                return dCandidate;
+                return post;
             }
             catch (Exception ex)
             {
@@ -181,6 +211,11 @@ namespace ServerBlog.Controllers
         private bool PostExists(Guid id)
         {
             return PostService.GetAll().Any(x =>x.PostId == id);
+        }
+
+        private string GetAuthor(Guid id)
+        {
+            return UserService.GetAll().FirstOrDefault(x => x.UserId == id).Login;
         }
     }
 }

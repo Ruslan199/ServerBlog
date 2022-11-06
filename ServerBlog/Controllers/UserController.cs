@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using ServerBlog.Services.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,9 +24,9 @@ namespace ServerBlog.Controllers
     {
         private readonly IUserRepository UserService;
         private readonly IAuthService AuthService;
-        private readonly ILogger Logger;
+        private readonly ILogger<UserController> Logger;
 
-        public UserController(IAuthService authService, IUserRepository userService, ILogger logger)
+        public UserController(IAuthService authService, IUserRepository userService, ILogger<UserController> logger)
         {
             UserService = userService;
             AuthService = authService;

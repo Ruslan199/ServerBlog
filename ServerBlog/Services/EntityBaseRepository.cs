@@ -54,15 +54,6 @@ namespace ServerBlog.Services
         {
             return Context.Set<T>().Count();
         }
-        public async virtual Task<IEnumerable<T>> AllIncludingAsync(params Expression<Func<T, object>>[] includeProperties)
-        {
-            IQueryable<T> query = Context.Set<T>();
-            foreach (var includeProperty in includeProperties)
-            {
-                query = query.Include(includeProperty);
-            }
-            return await query.ToListAsync();
-        }
 
         public async ValueTask<T> GetAsync(Expression<Func<T, bool>> predicate)
         {

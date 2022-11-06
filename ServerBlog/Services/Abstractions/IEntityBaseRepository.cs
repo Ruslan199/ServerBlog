@@ -12,9 +12,7 @@ namespace ServerBlog.Services.Abstractions
         void Delete(T entity);
         void DeleteWhere(Expression<Func<T, bool>> predicate);
         Task<int> Commit();
-        Task<IEnumerable<T>> AllIncludingAsync(params Expression<Func<T, object>>[] includeProperties);
         IEnumerable<T> GetAll();
-
         ValueTask<T> GetAsync(Expression<Func<T, bool>> predicate);
         T GetSingle(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includeProperties);
         IEnumerable<T> FindBy(Expression<Func<T, bool>> predicate);

@@ -39,6 +39,7 @@ namespace ServerBlog
 
             services.AddDbContext<PostDBContext>(options => options.UseSqlServer(connection));
 
+            
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -53,6 +54,8 @@ namespace ServerBlog
                             Encoding.UTF8.GetBytes(Configuration.GetValue<string>("JWTSecretKey"))
                         )
                     };
+
+                    options.SaveToken = false;
 
                     options.Events = new JwtBearerEvents
                     {
@@ -74,6 +77,13 @@ namespace ServerBlog
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
+
+            services.AddLogging(config =>
+            {
+                config.AddDebug();
+                config.AddConsole();
+                config.AddEventLog();
+            });
 
             services.AddSingleton<IAuthService>(
                 new AuthService(

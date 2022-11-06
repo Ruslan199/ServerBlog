@@ -40,6 +40,7 @@ namespace ServerBlog.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
 
+
             return new AuthData
             {
                 Token = token,

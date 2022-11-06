@@ -35,7 +35,7 @@ export default function RegistrationComponent(props) {
             .then(responseFromServer => {
                 if(responseFromServer.success) {
                     alert(responseFromServer.message);
-                    navigate('/');
+                    navigate('/login');
                 }
                 else{
                     alert(responseFromServer.message);

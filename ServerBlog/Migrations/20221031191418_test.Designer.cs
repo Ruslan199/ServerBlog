@@ -10,8 +10,8 @@ using ServerBlog.Models;
 namespace ServerBlog.Migrations
 {
     [DbContext(typeof(PostDBContext))]
-    [Migration("20221027115641_Testt")]
-    partial class Testt
+    [Migration("20221031191418_test")]
+    partial class test
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
