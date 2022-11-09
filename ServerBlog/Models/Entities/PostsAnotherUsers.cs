@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Entities
 {
-    public class AllPostFromBlog
+    public class PostsAnotherUsers
     {
         [Required]
         [MaxLength(100)]

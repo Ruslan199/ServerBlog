@@ -30,61 +30,75 @@ namespace ServerBlog.Controllers
             Logger = logger;
         }
 
+        /*
+          Получение всех постов пользователя
+        */
         // GET: api/posts/getUserPosts
-        [HttpGet("getUserPosts")]
         [Authorize]
+        [HttpGet("getUserPosts")]
         public async Task<ActionResult<IEnumerable<Post>>> GetAllUserPosts()
         {
             try
             {
                 var userId = HttpContext.User.Identity.Name;
                 var allUserPosts = PostService.FindBy(x=>x.UserId.ToString() == userId);
-                return new JsonResult(new AllPostUser { Success = true, Message = "", Posts = allUserPosts });
+                return new JsonResult(new AllPostUserResponse { Success = true, Message = "", Posts = allUserPosts });
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new BaseResponse { Success = false, Message = ex.Message });
             }
         }
 
+        /*
+          Получение количества постов пользователей
+        */
         // GET: api/posts/getUserPosts
-        [HttpGet("getCountPosts")]
         [Authorize]
+        [HttpGet("getCountPosts")]
         public ActionResult<IEnumerable<Post>> GetCountAllUserPosts()
         {
             try
             {
                 var getAllUser = UserService.GetAll().ToList();
-                var allUserPosts = new List<AllPosts>();
+                var allUserPosts = new List<CountPostUsers>();
 
                 foreach (var user in getAllUser)
                 {
                     var countPost = PostService.FindBy(x => x.UserId == user.UserId).Count();
-                    allUserPosts.Add(new AllPosts { UserName = user.Login, CountPost = countPost });
+                    if (countPost > 0)
+                    {
+                        allUserPosts.Add(new CountPostUsers { UserName = user.Login, CountPost = countPost });
+                    }
                 }
 
-                return new JsonResult(new AllPostsFromServer { AllPosts = allUserPosts });
+                return new JsonResult(new CountAllPostResponse { Success = true, Message = "", AllPosts = allUserPosts });
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new BaseResponse { Success = false, Message = ex.Message });
             }
         }
 
-        [HttpGet("getAllPosts")]
+
+        /*
+          Получение постов других пользователей
+        */
+        // GET: api/posts/getAllPosts
         [Authorize]
+        [HttpGet("getAllPosts")]
         public ActionResult<IEnumerable<Post>> GetAllPosts()
         {
             try
             {
-                var allUserPosts = PostService.GetAll().ToList();
-                var posts = new List<AllPostFromBlog>();
+                var allUserPosts = PostService.GetAll().Where(x=>x.UserId.ToString() != HttpContext.User.Identity.Name).ToList();
+                var posts = new List<PostsAnotherUsers>();
 
                 foreach (var post in allUserPosts)
                 {
-                    posts.Add(new AllPostFromBlog
+                    posts.Add(new PostsAnotherUsers
                     {
                         Author =  GetAuthor(post.UserId),
                         Content = post.Content,
@@ -93,16 +107,19 @@ namespace ServerBlog.Controllers
                         PostId = post.PostId
                     });
                 }
-                return new JsonResult(new AllPostsFromServerResponse { Success = true, Message = "", Posts = posts });
+                return new JsonResult(new PostsAnotherUsersResponse { Success = true, Message = "", Posts = posts });
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new PostsAnotherUsersResponse { Success = false, Message = ex.Message });
             }
         }
 
-        // GET: api/DCandidate/5
+        /*
+            Получение поста
+        */
+        // GET: api/posts/{id}
         [HttpGet("GetPostById/{id}")]
         public async Task<ActionResult<Post>> GetPost(string id)
         {
@@ -121,17 +138,26 @@ namespace ServerBlog.Controllers
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new BaseResponse { Success = false, Message = ex.Message });
             }
         }
 
-        // PUT: api/DCandidate/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
-        // more details see https://aka.ms/RazorPagesCRUD.
+        /*
+            Обновление поста
+        */
+        // PUT: api/posts/{id}
+        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPost(Guid id, Post post)
+        public async Task<ActionResult<Post>> PutPost(Guid id,[FromBody] UpdatePostRequest postRequest)
         {
-            post.PostId = id;
+            Post post = new Post()
+            {
+                PostId = id,
+                Title = postRequest.Title,
+                Content = postRequest.Content,
+                UserId = new Guid(HttpContext.User.Identity.Name),
+                CreatedOn = DateTime.Now
+            };
 
             PostService.Update(post);
 
@@ -143,7 +169,7 @@ namespace ServerBlog.Controllers
             {
                 if (!PostExists(post.PostId))
                 {
-                    return NotFound();
+                    return new JsonResult(new BaseResponse { Success = false, Message = $"Такого поста с id {post.PostId} не существует" });
                 }
                 else
                 {
@@ -154,9 +180,10 @@ namespace ServerBlog.Controllers
             return NoContent();
         }
 
-        // POST: api/DCandidate
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
-        // more details see https://aka.ms/RazorPagesCRUD.
+        /*
+            Добавление поста
+        */
+        // POST: api/posts/addPost
         [Authorize]
         [HttpPost("addPost")]
         public async Task<ActionResult<Post>> CreatePost([FromBody] AddPostRequest postRequest)
@@ -180,13 +207,17 @@ namespace ServerBlog.Controllers
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new BaseResponse { Success = false, Message = ex.Message });
             }
         }
 
-        // DELETE: api/DCandidate/5
+        /*
+           Удаление поста 
+        */
+        // DELETE: api/posts/{id}
+        [Authorize]
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Post>> DeleteDCandidate(string id)
+        public async Task<ActionResult> DeletePost(string id)
         {
             try
             {
@@ -199,20 +230,26 @@ namespace ServerBlog.Controllers
                 PostService.Delete(post);
                 await PostService.Commit();
 
-                return post;
+                return NoContent();
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Exception occurred with a message: {ex.Message}");
-                return StatusCode(500, ex.Message);
+                return new JsonResult(new BaseResponse { Success = false, Message = ex.Message });
             }
         }
 
+        /*
+           Проверка существования поста 
+        */
         private bool PostExists(Guid id)
         {
             return PostService.GetAll().Any(x =>x.PostId == id);
         }
 
+        /*
+           Получение автора поста 
+        */
         private string GetAuthor(Guid id)
         {
             return UserService.GetAll().FirstOrDefault(x => x.UserId == id).Login;

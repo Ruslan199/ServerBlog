@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Response
 {
-    public class AllPostUser : BaseResponse
+    public class AuthResponse : BaseResponse
     {
-        public IEnumerable<Post> Posts { get; set; }
+        public string Token { get; set; }
+
+        public string UserId { get; set; }
     }
 }

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Response
 {
-    public class AllPostsFromServer
+    public class PostsAnotherUsersResponse : BaseResponse
     {
-        public List<AllPosts> AllPosts { get; set; }
+        public List<PostsAnotherUsers> Posts { get; set; }
     }
 }

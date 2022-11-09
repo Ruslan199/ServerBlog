@@ -4,13 +4,10 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ServerBlog.Models
+namespace ServerBlog.Models.Request
 {
-    public class Post
+    public class UpdatePostRequest
     {
-        [Key]
-        public Guid PostId { get; set; }
-
         [Required]
         [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
@@ -19,8 +16,5 @@ namespace ServerBlog.Models
         [MaxLength(100)]
         public string Content { get; set; } = string.Empty;
 
-        public DateTime CreatedOn { get; set; }
-
-        public Guid UserId { get; set; }
     }
 }

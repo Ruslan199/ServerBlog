@@ -8,8 +8,6 @@ namespace ServerBlog.Services.Abstractions
 {
     public interface IAuthService
     {
-       // string HashPassword(string password);
-        //bool VerifyPassword(string actualPassword, string hashedPassword);
         AuthData GetAuthData(Guid id);
     }
 }

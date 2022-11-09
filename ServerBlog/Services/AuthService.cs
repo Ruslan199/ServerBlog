@@ -44,21 +44,8 @@ namespace ServerBlog.Services
             return new AuthData
             {
                 Token = token,
-                TokenExpirationTime = ((DateTimeOffset)expirationTime).ToUnixTimeSeconds(),
                 Id = id.ToString()
             };
         }
-
-        /*
-        public string HashPassword(string password)
-        {
-            return Crypto.HashPassword(password);
-        }
-
-        public bool VerifyPassword(string actualPassword, string hashedPassword)
-        {
-            return Crypto.VerifyHashedPassword(hashedPassword, actualPassword);
-        }
-        */
     }
 }

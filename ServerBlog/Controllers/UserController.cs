@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ServerBlog.Models;
 using ServerBlog.Models.Entities;
 using ServerBlog.Models.Request;
+using ServerBlog.Models.Response;
 using ServerBlog.Services.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,9 @@ namespace ServerBlog.Controllers
             Logger = logger;
         }
 
+        /*
+          Метод регистрации пользователя 
+        */
         [HttpPost("registration")]
         public async Task<ActionResult<User>> Registration([FromBody] UserRegistrationRequest request)
         {
@@ -68,9 +72,11 @@ namespace ServerBlog.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
+        /*
+           Метод авторизации пользователя 
+        */
         [HttpPost("authorization")]
-        public ActionResult<AuthData> Authorization([FromBody] AuthRequest request)
+        public ActionResult Authorization([FromBody] AuthRequest request)
         {
             try
             {
@@ -79,10 +85,12 @@ namespace ServerBlog.Controllers
                 var userValid = UserService.GetAll().Where(x => x.Password == request.Password && x.Login == request.Login).SingleOrDefault();
                 if (userValid == null)
                 {
-                    return BadRequest(new { password = "invalid password" });
+                    return new JsonResult(new AuthResponse { Success = false, Message = $"Не найден пользователь с логином {request.Login} проверьте логин/пароль" });
                 }
 
-                return AuthService.GetAuthData(user.UserId);
+                var authInfo = AuthService.GetAuthData(user.UserId);
+
+                return new JsonResult(new AuthResponse { Success = true, Token = authInfo.Token, UserId = authInfo.Id });
             }
 
             catch (Exception ex)
