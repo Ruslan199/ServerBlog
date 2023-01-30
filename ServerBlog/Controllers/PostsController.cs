@@ -42,7 +42,7 @@ namespace ServerBlog.Controllers
             {
                 var userId = HttpContext.User.Identity.Name;
                 var allUserPosts = PostService.FindBy(x=>x.UserId.ToString() == userId);
-                return new JsonResult(new AllPostUserResponse { Success = true, Message = "", Posts = allUserPosts });
+                return new JsonResult(new AllPostsUserResponse { Success = true, Message = "", Posts = allUserPosts });
             }
             catch (Exception ex)
             {
@@ -62,18 +62,18 @@ namespace ServerBlog.Controllers
             try
             {
                 var getAllUser = UserService.GetAll().ToList();
-                var allUserPosts = new List<CountPostUsers>();
+                var allUserPosts = new List<CountPostsUser>();
 
                 foreach (var user in getAllUser)
                 {
                     var countPost = PostService.FindBy(x => x.UserId == user.UserId).Count();
                     if (countPost > 0)
                     {
-                        allUserPosts.Add(new CountPostUsers { UserName = user.Login, CountPost = countPost });
+                        allUserPosts.Add(new CountPostsUser { UserName = user.Login, CountPost = countPost });
                     }
                 }
 
-                return new JsonResult(new CountAllPostResponse { Success = true, Message = "", AllPosts = allUserPosts });
+                return new JsonResult(new CountPostsUserResponse { Success = true, Message = "", AllPosts = allUserPosts });
             }
             catch (Exception ex)
             {

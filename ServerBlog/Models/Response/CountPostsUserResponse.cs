@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Response
 {
-    public class CountAllPostResponse : BaseResponse
+    public class CountPostsUserResponse : BaseResponse
     {
-        public List<CountPostUsers> AllPosts { get; set; }
+        public List<CountPostsUser> AllPosts { get; set; }
     }
 }
