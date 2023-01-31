@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Response
 {
-    public class AllPostUserResponse : BaseResponse
+    public class AllPostsUserResponse : BaseResponse
     {
         public IEnumerable<Post> Posts { get; set; }
     }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ServerBlog.Models.Entities
 {
-    public class CountPostUsers
+    public class CountPostsUser
     {
         public string UserName { get; set; }
 
